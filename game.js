@@ -5,8 +5,8 @@ const COLOURS = ['#ffffff','#e3e5e8','#a4aab6','#555969','#252b38','#15151c','#f
 const DEFAULT = () => ({streak:0,best:0,played:0,total:0,deck:[],cursor:0,round:null,difficulty:'easy'});
 let state=DEFAULT(),storageOK=true;
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.deck)&&s.deck.every(id=>Number.isInteger(id)&&id>=1&&id<=151)&&['streak','best','played','total','cursor'].every(k=>Number.isFinite(s[k])&&s[k]>=0)&&s.cursor<=s.deck.length)state={...DEFAULT(),...s};}catch{storageOK=false;}
-// Existing saves keep the original Hard behaviour; new players start on Easy.
-try{const previous=JSON.parse(localStorage.getItem(KEY));state.difficulty=['easy','hard'].includes(previous?.difficulty)?previous.difficulty:previous?'hard':'easy';}catch{state.difficulty='easy';}
+// Apply the Easy default once to older saves, then remember deliberate choices.
+try{const previous=JSON.parse(localStorage.getItem(KEY));state.difficulty=previous?.difficultyDefaultVersion===2&&['easy','hard'].includes(previous.difficulty)?previous.difficulty:'easy';state.difficultyDefaultVersion=2;}catch{state.difficulty='easy';}
 let current,original,regions,mask,line,anchors=[],paint=new Int32Array(COUNT).fill(-1),history=[],future=[],selected='#f8d030',tool='bucket',drawing=false,lastPoint=null,ready=false,submitted=false,installEvent=null;
 const ctx=$('painting').getContext('2d',{willReadFrequently:true});
 function save(){try{state.round={id:current?.id,paint:Array.from(paint),result:state.round?.result??null};localStorage.setItem(KEY,JSON.stringify(state));}catch{storageOK=false;}if(!storageOK)$('saveNote').textContent='Progress can’t be saved in this browser';}
