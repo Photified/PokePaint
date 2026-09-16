@@ -1,6 +1,6 @@
 'use strict';
 // Bump VERSION whenever you change any shipped files.
-const VERSION='pokepaint-v1.3.0';
+const VERSION='pokepaint-v1.4.0';
 const PREFIX='pokepaint-'+encodeURIComponent(self.registration.scope)+'-';
 const CACHE=PREFIX+VERSION;
 const FILES=['./','index.html','style.css','game.js','pokemon.js','manifest.json','icon.svg','icons/icon-192.png','icons/icon-512.png','icons/maskable-512.png',...Array.from({length:151},(_,i)=>`assets/${i+1}.png`)];
