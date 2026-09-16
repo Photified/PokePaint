@@ -7,3 +7,5 @@
 
 /* Match the PokéGrid title typography and colours. */
 .brand{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:1.3rem;font-weight:900;font-synthesis:weight;letter-spacing:1px;color:#ffcb05;text-shadow:2px 2px 0 #2264b3,-1px -1px 0 #2264b3,1px -1px 0 #2264b3,-1px 1px 0 #2264b3;line-height:1.2}
+
+.nearby-colours{margin-top:17px;padding-top:13px;border-top:1px solid #d7ddd9}.nearby-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:11px}.nearby-heading h3{font-size:13px;margin:0}.nearby-heading span{font-size:11px;color:#627475}.variant-palette{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px}.variant-swatch{border-radius:9px;min-height:34px;max-height:46px}.variant-swatch.selected:after{border-radius:12px}

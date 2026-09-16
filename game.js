@@ -25,7 +25,32 @@ for(let p=0;p<COUNT;p++)if(mask[p]){const i=p*4;regions[p]=assignments.get((data
 function renderTo(context,values){const out=context.createImageData(SIZE,SIZE);for(let p=0;p<COUNT;p++){const i=p*4;if(line[p]){out.data.set([32,36,44,255],i);continue;}if(!mask[p])continue;let rgb=values[p]<0?[255,255,255]:channels(values[p]);if(values[p]<0){const x=p%SIZE,y=Math.floor(p/SIZE);const boundary=(x>0&&mask[p-1]&&regions[p-1]!==regions[p])||(y>0&&mask[p-SIZE]&&regions[p-SIZE]!==regions[p]);if(boundary)rgb=[193,199,204];}out.data.set([...rgb,255],i);}context.putImageData(out,0,0);}
 function render(){renderTo(ctx,paint);let filled=0,total=0;for(let i=0;i<COUNT;i++)if(mask[i]){total++;if(paint[i]>=0)filled++;}$('coverage').textContent=Math.round(100*filled/Math.max(1,total))+'% painted';$('grade').disabled=!ready||submitted||filled===0;$('undo').disabled=!history.length||submitted;$('redo').disabled=!future.length||submitted;}
 function snapshot(){history.push(paint.slice());if(history.length>25)history.shift();future=[];}
-function selectColour(colour){selected=colour.toLowerCase();$('customColour').value=selected;$('selectedChip').style.background=selected;$('colourHex').textContent=selected.toUpperCase();document.querySelectorAll('.swatch').forEach(b=>{const active=b.dataset.colour===selected;b.classList.toggle('selected',active);b.setAttribute('aria-pressed',active);});}
+// Keep the chosen hue while offering eight nearby lightness variants.
+function nearbyColours(hex){
+ const [r,g,b]=channels(rgbHex(hex)).map(v=>v/255),max=Math.max(r,g,b),min=Math.min(r,g,b),delta=max-min;
+ const light=(max+min)/2,saturation=delta===0?0:delta/(1-Math.abs(2*light-1));
+ let hue=0;if(delta){hue=max===r?((g-b)/delta)%6:max===g?(b-r)/delta+2:(r-g)/delta+4;hue=(hue*60+360)%360;}
+ const low=Math.max(0,light-.18),high=Math.min(1,light+.18);
+ const skip=Math.round((light-low)/(high-low)*8),variants=[];
+ for(let i=0;i<9;i++){
+  if(i===skip)continue;
+  const l=low+(high-low)*i/8,c=(1-Math.abs(2*l-1))*saturation,x=c*(1-Math.abs((hue/60)%2-1)),m=l-c/2;
+  const rgb=hue<60?[c,x,0]:hue<120?[x,c,0]:hue<180?[0,c,x]:hue<240?[0,x,c]:hue<300?[x,0,c]:[c,0,x];
+  variants.push('#'+rgb.map(v=>Math.round((v+m)*255).toString(16).padStart(2,'0')).join(''));
+ }
+ return variants;
+}
+function showVariants(colour){
+ $('colourVariants').replaceChildren();
+ for(const shade of nearbyColours(colour)){
+  const b=document.createElement('button');b.type='button';b.className='swatch variant-swatch';b.style.background=shade;b.dataset.colour=shade;
+  b.title=shade.toUpperCase();b.setAttribute('aria-label','Paint nearby shade '+shade.toUpperCase());b.setAttribute('aria-pressed','false');
+  // Choosing a variant leaves the eight options in place for easy comparison.
+  b.onclick=()=>selectColour(shade,false);$('colourVariants').append(b);
+ }
+}
+function selectColour(colour,refreshVariants=true){selected=colour.toLowerCase();if(refreshVariants)showVariants(selected);$('customColour').value=selected;$('selectedChip').style.background=selected;$('colourHex').textContent=selected.toUpperCase();document.querySelectorAll('.swatch').forEach(b=>{const active=b.dataset.colour===selected;b.classList.toggle('selected',active);b.setAttribute('aria-pressed',active);});}
+
 function selectTool(t){tool=t;for(const k of ['bucket','brush']){$(k).classList.toggle('active',t===k);$(k).setAttribute('aria-pressed',t===k);}$('brushOptions').hidden=t!=='brush';$('hint').textContent=t==='bucket'?(state.difficulty==='easy'?'Tap once to fill all matching areas. Shading is automatic.':'Choose a colour, then tap a section to fill it.'):'Drag to paint. The brush stays inside the Pokémon.';}
 function fill(x,y){const p=y*SIZE+x;if(!mask[p])return false;const target=regions[p];if(state.difficulty==='easy'){const rgb=channels(rgbHex(selected)),anchor=anchors[target];for(let i=0;i<COUNT;i++)if(mask[i]&&regions[i]===target){const at=i*4;const c=rgb.map((v,k)=>Math.max(0,Math.min(255,v+original[at+k]-anchor[k])));paint[i]=(c[0]<<16)|(c[1]<<8)|c[2];}return true;}const seen=new Uint8Array(COUNT),stack=[p],value=rgbHex(selected);while(stack.length){const i=stack.pop();if(seen[i]||!mask[i]||regions[i]!==target)continue;seen[i]=1;paint[i]=value;const cx=i%SIZE,cy=Math.floor(i/SIZE);if(cx>0)stack.push(i-1);if(cx<SIZE-1)stack.push(i+1);if(cy>0)stack.push(i-SIZE);if(cy<SIZE-1)stack.push(i+SIZE);}return true;}
 function dab(x,y){const r=+$('brushSize').value,v=rgbHex(selected);for(let yy=Math.max(0,y-r);yy<=Math.min(SIZE-1,y+r);yy++)for(let xx=Math.max(0,x-r);xx<=Math.min(SIZE-1,x+r);xx++)if((xx-x)**2+(yy-y)**2<=r*r&&mask[yy*SIZE+xx])paint[yy*SIZE+xx]=v;}
